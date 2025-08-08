@@ -7,7 +7,7 @@ async function getTabSettings(tabId) {
 
 async function setTabSettings(tabId, settings) {
   await browser.storage.local.set({
-    [`ntusnipe_tabSettings_${tabId}`]: settings
+	[`ntusnipe_tabSettings_${tabId}`]: settings
   });
 }
 
@@ -18,16 +18,16 @@ async function clearTabSettings(tabId) {
 async function searchTab(tabId) {
   try {
 	// console.log(await getTabSettings(tabId))
-    const results = await browser.tabs.executeScript(tabId, {
+	const results = await browser.tabs.executeScript(tabId, {
 		// refresh and skip confirmation. can't use query string, stars freaks out if unrecognized query is there
-		// ok stars also freaks out if you do a hacky method like this because the http data is different...
-		// code: `window.location.href = window.location.pathname` //+ "?indices=${(await getTabSettings(tabId)).indices.join("%20")}"`
+		// stars also freaks out if you do a hacky method like this because the http data is different...
+		// at worst, about:config -> dom.confirm_repost.testing.always_accept = true
 		code: "window.history.back(); window.history.forward()"
-    });
+	});
 
 	// wait for load to finish
 	browser.tabs.onUpdated.addListener(async (updatedTabId, changeInfo) => {
-        if (updatedTabId === tabId && changeInfo.status === 'complete') {
+		if (updatedTabId === tabId && changeInfo.status === 'complete') {
 			browser.tabs.onUpdated.removeListener(onCompleted);
 			await browser.runtime.sendMessage({
 				action: "check",
@@ -35,13 +35,13 @@ async function searchTab(tabId) {
 				interval: interval,
 				indices: (await getTabSettings(tabId)).indices
 			});
-        }
-    });
+		}
+	});
 
-    return results?.[0] || null;
+	return results?.[0] || null;
   } catch (error) {
-    console.error(`failed in tab ${tabId}:`, error);
-    return null;
+	console.error(`failed in tab ${tabId}:`, error);
+	return null;
   }
 }
 
@@ -55,34 +55,34 @@ async function monitorTab(tabId) {
   const { interval, indices } = settings;
 
   const checkAndRefresh = async () => {
-    try {
-      // Verify tab still exists
-      const tab = await browser.tabs.get(tabId);
+	try {
+	  // Verify tab still exists
+	  const tab = await browser.tabs.get(tabId);
 
-      // refresh and check
-      const index = await searchTab(tabId, indices);
+	  // refresh and check
+	  const index = await searchTab(tabId, indices);
 
-      browser.runtime.sendMessage({
-        action: "checkDone",
-        tabId: tabId,
-        // index: index,
-        timestamp: Date.now()
-      }).catch(() => {});
+	  browser.runtime.sendMessage({
+		action: "checkDone",
+		tabId: tabId,
+		// index: index,
+		timestamp: Date.now()
+	  }).catch(() => {});
 
-      // Wait for page load to start timer
-      const onCompleted = (updatedTabId, changeInfo) => {
-        if (updatedTabId === tabId && changeInfo.status === 'complete') {
-          browser.tabs.onUpdated.removeListener(onCompleted);
-          activeMonitors[tabId] = setTimeout(() => checkAndRefresh(), interval);
-        }
-      };
+	  // Wait for page load to start timer
+	  const onCompleted = (updatedTabId, changeInfo) => {
+		if (updatedTabId === tabId && changeInfo.status === 'complete') {
+		  browser.tabs.onUpdated.removeListener(onCompleted);
+		  activeMonitors[tabId] = setTimeout(() => checkAndRefresh(), interval);
+		}
+	  };
 
-      browser.tabs.onUpdated.addListener(onCompleted);
+	  browser.tabs.onUpdated.addListener(onCompleted);
 
-    } catch (error) {
-      console.error(`Monitoring failed for tab ${tabId}:`, error);
-      stopMonitoring(tabId);
-    }
+	} catch (error) {
+	  console.error(`Monitoring failed for tab ${tabId}:`, error);
+	  stopMonitoring(tabId);
+	}
   };
 
   // Start the monitoring cycle
@@ -91,28 +91,28 @@ async function monitorTab(tabId) {
 
 function stopMonitoring(tabId) {
   if (activeMonitors[tabId]) {
-    clearTimeout(activeMonitors[tabId]);
-    delete activeMonitors[tabId];
+	clearTimeout(activeMonitors[tabId]);
+	delete activeMonitors[tabId];
   }
 }
 
 // Message handling
 browser.runtime.onMessage.addListener(async (message, sender) => {
   switch (message.action) {
-    case "startMonitoring":
-      await setTabSettings(message.tabId, {
-        interval: message.interval,
-      	indices: message.indices
-      });
-      monitorTab(message.tabId);
-      break;
+	case "startMonitoring":
+	  await setTabSettings(message.tabId, {
+		interval: message.interval,
+	  	indices: message.indices
+	  });
+	  monitorTab(message.tabId);
+	  break;
 
-    case "stopMonitoring":
-      stopMonitoring(message.tabId);
-      await clearTabSettings(message.tabId);
-      break;
+	case "stopMonitoring":
+	  stopMonitoring(message.tabId);
+	  await clearTabSettings(message.tabId);
+	  break;
 
-    case "getTabState":
+	case "getTabState":
 		const settings = await getTabSettings(message.tabId);
 		return Promise.resolve({
 			isMonitoring: !!activeMonitors[message.tabId],
@@ -133,14 +133,14 @@ browser.tabs.onRemoved.addListener((tabId) => {
 browser.runtime.onStartup.addListener(async () => {
   const allItems = await browser.storage.local.get();
   Object.keys(allItems)
-    .filter(key => key.startsWith('ntusnipe_tabSettings_'))
-    .forEach(async (key) => {
-      const tabId = parseInt(key.split('_').at(-1));
-      try {
-        await browser.tabs.get(tabId); // Verify tab exists
-        monitorTab(tabId);
-      } catch {
-        await clearTabSettings(tabId);
-      }
-    });
+	.filter(key => key.startsWith('ntusnipe_tabSettings_'))
+	.forEach(async (key) => {
+	  const tabId = parseInt(key.split('_').at(-1));
+	  try {
+		await browser.tabs.get(tabId); // Verify tab exists
+		monitorTab(tabId);
+	  } catch {
+		await clearTabSettings(tabId);
+	  }
+	});
 });
