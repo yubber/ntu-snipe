@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>ntu snipe</title>
+</head>
+<body style="background-color: lightcoral;">
+	<div id="hidden">
+		stars index selection page not detected. <br>
+		navigate to https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option <br>
+		(the index selection page after "change index")
+	</div>
+	<div id="controls" style="display: none;">
+		<h3>all options affect this tab only</h3>
+		<h5>allow desktop notifications to be alerted when an index is found</h5>
+		<div>
+			desired indices (space separated, most to least preferred)
+			<input type="text" name="wantedIndices" id="wantedIndices">
+		</div>
+		<div>
+			seconds between refreshes
+			<input type="number" name="refreshInterval" id="refreshInterval" min="30">
+		</div>
+		<br><br>
+
+		<center>
+			<div id="status" class="status inactive">
+				not checking this tab
+			</div>
+			<button id="toggleCheck">start</button>
+			<!-- <button id="apply">apply settings</button> -->
+
+			<div class="control-group">
+				<div>last check:</div>
+				<div id="timestamp" class="timestamp"></div>
+			</div>
+				<!-- <button id="apply">apply and start</button>
+				<button id="stop">stop</button> -->
+		</center>
+	</div>
+
+	<script src="popup.js"></script>
+</body>
+</html>

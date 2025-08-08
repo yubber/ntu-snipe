@@ -1,0 +1,23 @@
+{
+  "name": "ntu-snipe",
+  "version": "0.0.1",
+  "description": "snipe course indices",
+  "manifest_version": 2,
+  "permissions": [
+    "https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option",
+    "tabs", "storage", "activeTab"
+  ],
+  "browser_action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "addon@example.com",
+      "strict_min_version": "42.0"
+    }
+  }
+}
