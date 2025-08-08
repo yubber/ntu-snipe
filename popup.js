@@ -9,7 +9,11 @@ var intervalInput
 var timestampEl
 var indicesInput
 
-async function initPopup() {
+console.log("popup.js loaded")
+
+document.addEventListener("DOMContentLoaded", async ()=>{
+	document.getElementById("debug").onclick = alert("javascript is working properly.")
+
 	const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
 	//   console.log("loaded on " + tab.url)
 	//   document.body.innerHTML += tab.url
@@ -21,7 +25,6 @@ async function initPopup() {
 	timestampEl = document.getElementById('timestamp');
 	indicesInput = document.getElementById('wantedIndices');
 
-	document.body.style.backgroundColor = "lightcoral"
 	if (true){//tab.url === "https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"){
 		document.body.style.backgroundColor = "white"
 		document.getElementById("controls").style.display = "block"
@@ -38,9 +41,7 @@ async function initPopup() {
 
 	// Event listeners
 	toggleBtn.addEventListener('click', toggleMonitoring);
-}
-
-document.addEventListener('DOMContentLoaded', initPopup);
+})
 
 // Update UI based on monitoring state
 function updateUI(state) {

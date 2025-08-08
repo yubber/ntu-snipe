@@ -5,18 +5,20 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>ntu snipe</title>
 </head>
-<body style="background-color: lightcoral;">
+<body style="background-color: lightcoral;font-family:'Arial Narrow',Arial,sans-serif;">
 	<center id="hidden">
-		<h1>not on the index change page.</h1><br>
+		<h3>not on the index change page.</h1><br>
 		navigate to https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option <br>
 		(the index selection page after "change index")
+		<br><br>
+		<!-- <button id="debug">debug</button> if no alert shows, javascript is not working. -->
 	</center>
 	<div id="controls" style="display: none;">
 		<h3>all options affect this tab only</h3>
 		<p>allow desktop notifications to be alerted when an index is found</p>
 		<div>
 			desired indices (space separated)
-			<input type="text" name="wantedIndices" id="wantedIndices" placeholder="53700 53701">
+			<textarea name="wantedIndices" id="wantedIndices" placeholder="53700 53701">
 		</div>
 		<br>
 		<div>
@@ -29,7 +31,7 @@
 			<div id="status" class="status inactive">
 				not checking this tab
 			</div>
-			<button id="toggleCheck">start</button>
+			<button id="toggleCheck" style="padding:0.5em">start</button>
 			<!-- <button id="apply">apply settings</button> -->
 
 			<div class="control-group">
@@ -41,6 +43,7 @@
 		</center>
 	</div>
 
+	<script>console.log("Inline script loaded");</script>
 	<script src="popup.js"></script>
 </body>
 </html>
