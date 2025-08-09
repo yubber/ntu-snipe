@@ -15,29 +15,42 @@ async function clearTabSettings(tabId) {
   await browser.storage.local.remove(`ntusnipe_tabSettings_${tabId}`);
 }
 
-async function searchTab(tabId) {
-  try {
-	// console.log(await getTabSettings(tabId))
-	const results = await browser.tabs.executeScript(tabId, {
-		// refresh and skip confirmation. can't use query string, stars freaks out if unrecognized query is there
-		// stars also freaks out if you do a hacky method like this because the http data is different...
-		// at worst, about:config -> dom.confirm_repost.testing.always_accept = true
-		code: "window.history.back(); window.history.forward()"
-	});
-
-	// wait for load to finish
+async function waitForLoad(tabId, func) {
 	browser.tabs.onUpdated.addListener(async (updatedTabId, changeInfo) => {
 		if (updatedTabId === tabId && changeInfo.status === 'complete') {
 			browser.tabs.onUpdated.removeListener(onCompleted);
-			await browser.runtime.sendMessage({
-				action: "check",
-				tabId: tabId,
-				interval: interval,
-				indices: (await getTabSettings(tabId)).indices
-			});
+			await func();
 		}
 	});
+}
 
+async function searchTab(tabId) {
+  try {
+	// console.log(await getTabSettings(tabId))
+	await browser.tabs.executeScript(tabId, {
+		// refresh and skip confirmation. can't use query string, stars freaks out if unrecognized query is there
+		// stars also freaks out if you do a hacky url manipulation method because the http data is different...
+		// at worst, about:config -> dom.confirm_repost.testing.always_accept = true
+		code: "window.history.back();"
+	});
+
+	// wait until loaded, then go to original pg
+	waitForLoad(tabId, async () => {
+		await browser.tabs.executeScript(tabId, {
+			code: "window.history.forward();"
+		})
+	});
+
+	waitForLoad(tabId, async () => {
+		await browser.runtime.sendMessage({
+			action: "check",
+			tabId: tabId,
+			interval: interval,
+			indices: (await getTabSettings(tabId)).indices
+		});
+	});
+
+	// TODO where is context scriiptkawa?
 	return results?.[0] || null;
   } catch (error) {
 	console.error(`failed in tab ${tabId}:`, error);
