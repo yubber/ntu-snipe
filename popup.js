@@ -1,4 +1,3 @@
-// State variables
 let currentTabId = null;
 let isMonitoring = false;
 let currentSettings = null;
@@ -11,8 +10,8 @@ var indicesInput
 
 console.log("popup.js loaded")
 
-document.addEventListener("DOMContentLoaded", async ()=>{
-	document.getElementById("debug").onclick = alert("javascript is working properly.")
+let onloadFn = async () => {
+	// document.getElementById("debug").onclick = alert("javascript is working properly.")
 
 	const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
 	//   console.log("loaded on " + tab.url)
@@ -25,7 +24,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 	timestampEl = document.getElementById('timestamp');
 	indicesInput = document.getElementById('wantedIndices');
 
-	if (true){//tab.url === "https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"){
+	if (tab.url === "https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"){
 		document.body.style.backgroundColor = "white"
 		document.getElementById("controls").style.display = "block"
 		document.getElementById("hidden").style.display = "none"
@@ -41,7 +40,10 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 
 	// Event listeners
 	toggleBtn.addEventListener('click', toggleMonitoring);
-})
+}
+
+document.addEventListener("DOMContentLoaded", onloadFn)
+
 
 // Update UI based on monitoring state
 function updateUI(state) {
