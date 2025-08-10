@@ -15,9 +15,9 @@ let getTabState = async (tabId) => {
 		action: "getTabState",
 		tabId: tabId
 	});
-	console.log(`fetched tab ${tabId}'s state:`)
-	console.log(x)
-	console.log(x.settings)
+	// console.log(`fetched tab ${tabId}'s state:`)
+	// console.log(x)
+	// console.log(x.settings)
 	return x
 }
 

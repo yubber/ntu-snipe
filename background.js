@@ -15,7 +15,7 @@ async function clearTabSettings(tabId) {
   await browser.storage.local.remove(`ntusnipe_tabSettings_${tabId}`);
 }
 
-function searchTab(tabId, indices) {
+async function searchTab(tabId, indices) {
 	try {
 		/*
 		1. refresh page by going back and forward (to avoid form resubmission errors and to prevent site from erroring because of missing POST data), waiting for page loads
@@ -23,28 +23,36 @@ function searchTab(tabId, indices) {
 		3. send message ordering check, with indices
 		5. once promise is resolved return search results
 		*/
-		return browser.tabs.goBack(tabId).then(()=>{ // the promise is fulfilled when page nav finishes
+		// background.js
+		let data = await browser.tabs.goBack(tabId).then(()=>{ // the promise is fulfilled when page nav finishes
 			browser.tabs.goForward(tabId).then(()=>{
 				browser.scripting.executeScript({
 					target: {tabId: tabId},
-					files: ["/scripts/checkListenerSetup.js"],
+					files: ["/scripts/reportIndices.js"],
 					injectImmediately: true
-				}).then(()=>{
-					browser.tabs.sendMessage(
-					tabId,
-					{
-						action: "checkIndices",
-						indices: indices
-					}
-					).then((res) => {
-						console.log(`results: ${res}`)
-						return (res === undefined ? null : res[0])
-					})
 				}).catch(err => {
 					console.error("Injection failed:", err);
 				});
 			})
 		})
+
+		console.log(data)
+		if (data === undefined){
+
+		}
+
+		for (const i of indices){
+			if (data[i.toString()] > 0){
+				new Notification('Course index found!',{
+					body: `${i} with ${data[i.toString()]} slots left`
+				});
+
+				return i
+			}
+		}
+		console.log("this iteration's search failed...")
+		return null
+
 	} catch (error) {
 		console.error(`failed in tab ${tabId}:`, error);
 		return null;
@@ -62,33 +70,33 @@ async function monitorTab(tabId) {
 
   const checkAndRefresh = async () => {
 	try {
-	  // Verify tab still exists
-	  const tab = await browser.tabs.get(tabId);
+		// Verify tab still exists
+		const tab = await browser.tabs.get(tabId);
 
-	  // refresh and check
-	  console.log(`searching tab ${tabId} for ${indices}`)
-	  const index = await searchTab(tabId, indices);
+		// refresh and check
+		console.log(`searching tab ${tabId} for ${indices}`)
+		const index = await searchTab(tabId, indices);
 
-	  browser.runtime.sendMessage({
-		action: "checkDone",
-		tabId: tabId,
-		// index: index,
-		timestamp: Date.now()
-	  }).catch(() => {});
+		browser.runtime.sendMessage({
+			action: "checkDone",
+			tabId: tabId,
+			// index: index,
+			timestamp: Date.now()
+		}).catch(() => {});
 
-	  // Wait for page load to start timer
-	  const onCompleted = (updatedTabId, changeInfo) => {
-		if (updatedTabId === tabId && changeInfo.status === 'complete') {
-		  browser.tabs.onUpdated.removeListener(onCompleted);
-		  activeMonitors[tabId] = setTimeout(() => checkAndRefresh(), interval);
-		}
-	  };
+		// Wait for page load to start timer
+		const onCompleted = (updatedTabId, changeInfo) => {
+			if (updatedTabId === tabId && changeInfo.status === 'complete') {
+				browser.tabs.onUpdated.removeListener(onCompleted);
+				activeMonitors[tabId] = setTimeout(() => checkAndRefresh(), interval);
+			}
+		};
 
-	  browser.tabs.onUpdated.addListener(onCompleted);
+		browser.tabs.onUpdated.addListener(onCompleted);
 
 	} catch (error) {
-	  console.error(`Monitoring failed for tab ${tabId}:`, error);
-	  stopMonitoring(tabId);
+		console.error(`Monitoring failed for tab ${tabId}:`, error);
+		stopMonitoring(tabId);
 	}
   };
 
