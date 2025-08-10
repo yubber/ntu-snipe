@@ -1,8 +1,8 @@
 const activeMonitors = {};
 
 async function getTabSettings(tabId) {
-  const result = await browser.storage.local.get(`ntusnipe_tabSettings_${tabId}`);
-  return result[`ntusnipe_tabSettings_${tabId}`] || null;
+	const result = await browser.storage.local.get(`ntusnipe_tabSettings_${tabId}`);
+	return result[`ntusnipe_tabSettings_${tabId}`] || null;
 }
 
 async function setTabSettings(tabId, settings) {
@@ -15,48 +15,40 @@ async function clearTabSettings(tabId) {
   await browser.storage.local.remove(`ntusnipe_tabSettings_${tabId}`);
 }
 
-// execute the function once tab loaded. returning is jank because of the listener
-async function waitForLoad(tabId, func) {
-	browser.tabs.onUpdated.addListener(async (updatedTabId, changeInfo) => {
-		if (updatedTabId === tabId && changeInfo.status === 'complete') {
-			browser.tabs.onUpdated.removeListener(onCompleted);
-			await func();
-		}
-	});
-}
-
-async function searchTab(tabId) {
-  try {
-	// console.log(await getTabSettings(tabId))
-	await browser.tabs.executeScript(tabId, {
-		// refresh and skip confirmation. can't use query string, stars freaks out if unrecognized query is there
-		// stars also freaks out if you do a hacky url manipulation method because the http data is different...
-		// at worst, about:config -> dom.confirm_repost.testing.always_accept = true
-		code: "window.history.back();"
-	});
-
-	// wait until loaded, then go to original pg
-	waitForLoad(tabId, async () => {
-		console.log("hi")
-		await browser.tabs.executeScript(tabId, {
-			code: "window.history.forward();"
+function searchTab(tabId, indices) {
+	try {
+		/*
+		1. refresh page by going back and forward (to avoid form resubmission errors and to prevent site from erroring because of missing POST data), waiting for page loads
+		2. setup message listener
+		3. send message ordering check, with indices
+		5. once promise is resolved return search results
+		*/
+		return browser.tabs.goBack(tabId).then(()=>{ // the promise is fulfilled when page nav finishes
+			browser.tabs.goForward(tabId).then(()=>{
+				browser.scripting.executeScript({
+					target: {tabId: tabId},
+					files: ["/scripts/checkListenerSetup.js"],
+					injectImmediately: true
+				}).then(()=>{
+					browser.tabs.sendMessage(
+					tabId,
+					{
+						action: "checkIndices",
+						indices: indices
+					}
+					).then((res) => {
+						console.log(`results: ${res}`)
+						return (res === undefined ? null : res[0])
+					})
+				}).catch(err => {
+					console.error("Injection failed:", err);
+				});
+			})
 		})
-	});
-
-	// wait, with blocking. can't wrap the return stuff in this because of return jank
-	waitForLoad(tabId, async () => {
-		return;
-	});
-
-	let result = await browser.tabs.executeScript(tabId, {
-		file: "scripts/findIndex.js"
-	})
-
-	return results?.[0] || null;
-  } catch (error) {
-	console.error(`failed in tab ${tabId}:`, error);
-	return null;
-  }
+	} catch (error) {
+		console.error(`failed in tab ${tabId}:`, error);
+		return null;
+	}
 }
 
 // Monitoring logic
@@ -74,6 +66,7 @@ async function monitorTab(tabId) {
 	  const tab = await browser.tabs.get(tabId);
 
 	  // refresh and check
+	  console.log(`searching tab ${tabId} for ${indices}`)
 	  const index = await searchTab(tabId, indices);
 
 	  browser.runtime.sendMessage({

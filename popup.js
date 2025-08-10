@@ -8,7 +8,7 @@ var intervalInput
 var timestampEl
 var indicesInput
 
-console.log("popup.js loaded")
+// console.log("popup.js loaded")
 
 let getTabState = async (tabId) => {
 	let x = await browser.runtime.sendMessage({
@@ -17,38 +17,9 @@ let getTabState = async (tabId) => {
 	});
 	console.log(`fetched tab ${tabId}'s state:`)
 	console.log(x)
+	console.log(x.settings)
 	return x
 }
-
-let onloadFn = async () => {
-	// document.getElementById("debug").onclick = alert("javascript is working properly.")
-
-	const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-	//   console.log("loaded on " + tab.url)
-	//   document.body.innerHTML += tab.url
-	currentTabId = tab.id;
-
-	statusEl = document.getElementById('status');
-	toggleBtn = document.getElementById('toggleCheck');
-	intervalInput = document.getElementById('refreshInterval');
-	timestampEl = document.getElementById('timestamp');
-	indicesInput = document.getElementById('wantedIndices');
-
-	if (tab.url === "https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"){
-		document.body.style.backgroundColor = "white"
-		document.getElementById("controls").style.display = "block"
-		document.getElementById("hidden").style.display = "none"
-	}
-
-	// Get current monitoring state for this tab
-
-	updateUI(getTabState(currentTabId));
-
-	// Event listeners
-	toggleBtn.addEventListener('click', toggleMonitoring);
-}
-
-document.addEventListener("DOMContentLoaded", onloadFn)
 
 // Update UI based on monitoring state
 function updateUI(state) {
@@ -60,7 +31,7 @@ function updateUI(state) {
 		statusEl.className = 'status active';
 		toggleBtn.textContent = 'stop';
 		intervalInput.value = currentSettings.interval / 1000;
-		indicesInput.value = currentSettings.indices;
+		indicesInput.value = currentSettings.indices.join(" ");
 	} else {
 		statusEl.textContent = 'not checking this tab';
 		statusEl.className = 'status inactive';
@@ -102,6 +73,11 @@ async function toggleMonitoring() {
 			return;
 		}
 
+		// update the tab env's indices
+		await browser.tabs.executeScript({
+			code: `indices = ${indices}`,
+		});
+
 		await browser.runtime.sendMessage({
 			action: "startMonitoring",
 			tabId: currentTabId,
@@ -127,6 +103,36 @@ browser.runtime.onMessage.addListener((message) => {
 		});
 	}
 });
+
+let onloadFn = async () => {
+	// document.getElementById("debug").onclick = alert("javascript is working properly.")
+
+	const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+	//   console.log("loaded on " + tab.url)
+	//   document.body.innerHTML += tab.url
+	currentTabId = tab.id;
+
+	statusEl = document.getElementById('status');
+	toggleBtn = document.getElementById('toggleCheck');
+	intervalInput = document.getElementById('refreshInterval');
+	timestampEl = document.getElementById('timestamp');
+	indicesInput = document.getElementById('wantedIndices');
+
+	if (tab.url === "https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"){
+		document.body.style.backgroundColor = "white"
+		document.getElementById("controls").style.display = "block"
+		document.getElementById("hidden").style.display = "none"
+	}
+
+	// Get current monitoring state for this tab
+
+	updateUI(getTabState(currentTabId));
+
+	// Event listeners
+	toggleBtn.addEventListener('click', toggleMonitoring);
+}
+
+document.addEventListener("DOMContentLoaded", onloadFn)
 
 // document.getElementById('apply').addEventListener('click', async () => {
 	// 	const refreshInterval = parseInt(document.getElementById('refreshInterval').value) * 1000;

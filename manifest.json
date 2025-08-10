@@ -7,7 +7,14 @@
 		"tabs",
 		"storage",
 		"activeTab",
+		"scripting",
 		"https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"
+	],
+	"content_scripts": [
+		{
+			"matches": ["https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"],
+			"js": ["content.js"]
+		}
 	],
 	"browser_action": {
 		"default_popup": "popup.html"
