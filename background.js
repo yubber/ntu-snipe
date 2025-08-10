@@ -16,6 +16,7 @@ async function clearTabSettings(tabId) {
 }
 
 async function searchTab(tabId, indices) {
+	// console.log(await browser.tabs.get(tabId))
 	try {
 		/*
 		1. refresh page by going back and forward (to avoid form resubmission errors and to prevent site from erroring because of missing POST data), waiting for page loads
@@ -24,36 +25,32 @@ async function searchTab(tabId, indices) {
 		5. once promise is resolved return search results
 		*/
 		// background.js
-		let data = await browser.tabs.goBack(tabId).then(()=>{ // the promise is fulfilled when page nav finishes
-			browser.tabs.goForward(tabId).then(()=>{
-				browser.scripting.executeScript({
-					target: {tabId: tabId},
-					func: ()=>{
-						let scraped = {}
+		await browser.tabs.goBack(tabId) // the promise is fulfilled when page nav finishes
+		await browser.tabs.goForward(tabId)
 
-						Array.from(document.querySelectorAll("select[name='new_index_nmbr']>option"))
-							// indices not defined
-							// .filter(e => indices.includes(`${e.value}`)) // list of elems
-							.filter(e =>  // matches regex "5digit / digit+ / digit+"
-								(/\d{5} \/ \d+ \/ \d+/gm).test(e.innerText)
-							)
-							.forEach(e => {
-								scraped[e.value.toString()] = parseInt(e.innerText.split("/")[1].trim()) // index : slots
-							})
+		let data = await browser.scripting.executeScript({
+			target: {tabId: tabId},
+			func: ()=>{
+				let scraped = {}
 
-						return scraped;
-					},
-					world: 'MAIN' // not very good but NOTHING ELSE WORKS https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/scripting/ExecutionWorld
-				}).catch(err => {
-					console.error("Injection failed:", err);
-				});
-			})
+				Array.from(document.querySelectorAll("select[name='new_index_nmbr']>option"))
+					// indices not defined
+					// .filter(e => indices.includes(`${e.value}`)) // list of elems
+					.filter(e =>  // matches regex "5digit / digit+ / digit+"
+						(/\d{5} \/ \d+ \/ \d+/gm).test(e.innerText)
+					)
+					.forEach(e => {
+						scraped[e.value.toString()] = parseInt(e.innerText.split("/")[1].trim()) // index : slots
+					})
+
+				return scraped;
+			},
+			world: 'MAIN' // not very good but NOTHING ELSE WORKS https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/scripting/ExecutionWorld
 		})
 
-		console.log(data)
-		if (data === undefined){
+		data = data[0].result
 
-		}
+		console.log(data)
 
 		for (const i of indices){
 			if (data[i.toString()] > 0){
@@ -148,6 +145,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
 			settings: settings,
 			lastValue: (await browser.storage.local.get(`lastValue_${message.tabId}`))[`lastValue_${message.tabId}`]
 		});
+		break
   }
 });
 

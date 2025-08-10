@@ -74,9 +74,9 @@ async function toggleMonitoring() {
 		}
 
 		// update the tab env's indices
-		await browser.tabs.executeScript({
-			code: `indices = ${indices}`,
-		});
+		// await browser.scripting.executeScript({
+		// 	code: `indices = ${indices}`,
+		// });
 
 		await browser.runtime.sendMessage({
 			action: "startMonitoring",
@@ -118,7 +118,8 @@ let onloadFn = async () => {
 	timestampEl = document.getElementById('timestamp');
 	indicesInput = document.getElementById('wantedIndices');
 
-	if (tab.url === "https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"){
+	if (true){
+	// if (tab.url === "https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"){
 		document.body.style.backgroundColor = "white"
 		document.getElementById("controls").style.display = "block"
 		document.getElementById("hidden").style.display = "none"
