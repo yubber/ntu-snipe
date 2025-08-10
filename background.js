@@ -15,6 +15,7 @@ async function clearTabSettings(tabId) {
   await browser.storage.local.remove(`ntusnipe_tabSettings_${tabId}`);
 }
 
+// execute the function once tab loaded. returning is jank because of the listener
 async function waitForLoad(tabId, func) {
 	browser.tabs.onUpdated.addListener(async (updatedTabId, changeInfo) => {
 		if (updatedTabId === tabId && changeInfo.status === 'complete') {
@@ -36,21 +37,21 @@ async function searchTab(tabId) {
 
 	// wait until loaded, then go to original pg
 	waitForLoad(tabId, async () => {
+		console.log("hi")
 		await browser.tabs.executeScript(tabId, {
 			code: "window.history.forward();"
 		})
 	});
 
+	// wait, with blocking. can't wrap the return stuff in this because of return jank
 	waitForLoad(tabId, async () => {
-		await browser.runtime.sendMessage({
-			action: "check",
-			tabId: tabId,
-			interval: interval,
-			indices: (await getTabSettings(tabId)).indices
-		});
+		return;
 	});
 
-	// TODO where is context scriiptkawa?
+	let result = await browser.tabs.executeScript(tabId, {
+		file: "scripts/findIndex.js"
+	})
+
 	return results?.[0] || null;
   } catch (error) {
 	console.error(`failed in tab ${tabId}:`, error);

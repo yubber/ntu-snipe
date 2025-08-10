@@ -10,6 +10,16 @@ var indicesInput
 
 console.log("popup.js loaded")
 
+let getTabState = async (tabId) => {
+	let x = await browser.runtime.sendMessage({
+		action: "getTabState",
+		tabId: tabId
+	});
+	console.log(`fetched tab ${tabId}'s state:`)
+	console.log(x)
+	return x
+}
+
 let onloadFn = async () => {
 	// document.getElementById("debug").onclick = alert("javascript is working properly.")
 
@@ -31,19 +41,14 @@ let onloadFn = async () => {
 	}
 
 	// Get current monitoring state for this tab
-	const state = await browser.runtime.sendMessage({
-		action: "getTabState",
-		tabId: currentTabId
-	});
 
-	updateUI(state);
+	updateUI(getTabState(currentTabId));
 
 	// Event listeners
 	toggleBtn.addEventListener('click', toggleMonitoring);
 }
 
 document.addEventListener("DOMContentLoaded", onloadFn)
-
 
 // Update UI based on monitoring state
 function updateUI(state) {
