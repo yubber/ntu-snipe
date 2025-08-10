@@ -28,8 +28,22 @@ async function searchTab(tabId, indices) {
 			browser.tabs.goForward(tabId).then(()=>{
 				browser.scripting.executeScript({
 					target: {tabId: tabId},
-					files: ["/scripts/reportIndices.js"],
-					injectImmediately: true
+					func: ()=>{
+						let scraped = {}
+
+						Array.from(document.querySelectorAll("select[name='new_index_nmbr']>option"))
+							// indices not defined
+							// .filter(e => indices.includes(`${e.value}`)) // list of elems
+							.filter(e =>  // matches regex "5digit / digit+ / digit+"
+								(/\d{5} \/ \d+ \/ \d+/gm).test(e.innerText)
+							)
+							.forEach(e => {
+								scraped[e.value.toString()] = parseInt(e.innerText.split("/")[1].trim()) // index : slots
+							})
+
+						return scraped;
+					},
+					world: 'MAIN' // not very good but NOTHING ELSE WORKS https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/scripting/ExecutionWorld
 				}).catch(err => {
 					console.error("Injection failed:", err);
 				});
