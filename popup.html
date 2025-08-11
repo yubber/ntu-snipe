@@ -6,41 +6,45 @@
 	<title>ntu snipe</title>
 </head>
 <body style="background-color: lightcoral;font-family:'Arial Narrow',Arial,sans-serif;">
-	<center id="hidden">
-		<h3>not on the index change page.</h3><br>
-		navigate to https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option <br>
-		(the index selection page after "change index")
-		<br><br>
-		<!-- <button id="debug">debug</button> if no alert shows, javascript is not working. -->
-	</center>
-	<div id="controls" style="display: none;">
-		<h3>all options affect this tab only</h3>
-		<p>allow desktop notifications to be alerted when an index is found</p>
-		<div>
-			desired indices (space separated)
-			<textarea name="wantedIndices" id="wantedIndices" placeholder="53700 53701"></textarea>
-		</div>
-		<br>
-		<div>
-			seconds between refreshes
-			<input type="number" name="refreshInterval" id="refreshInterval" min="30" value="120">
-		</div>
-		<hr>
-		<center>
-			<h3>status</h3>
-			<div id="status" class="status inactive">
-				not checking this tab
-			</div>
-			<button id="toggleCheck" style="padding:0.5em">start</button>
-			<!-- <button id="apply">apply settings</button> -->
-
-			<div class="control-group">
-				<div id="timestamp" class="timestamp"></div>
-			</div>
-				<!-- <button id="apply">apply and start</button>
-				<button id="stop">stop</button> -->
+	<popupset><panel noautohide="true">
+		<center id="hidden">
+			<h3>not on the index change page.</h3><br>
+			navigate to https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option <br>
+			(the index selection page after "change index")
+			<br><br>
+			<!-- <button id="debug">debug</button> if no alert shows, javascript is not working. -->
 		</center>
-	</div>
+		<div id="controls" style="display: none;">
+			<h3>all options affect this tab only</h3>
+			<p>allow desktop notifications to be alerted when an index is found</p>
+			<div>
+				desired indices (space separated)
+				<textarea name="wantedIndices" id="wantedIndices" placeholder="53700 53701"></textarea>
+			</div>
+			<br>
+			<div>
+				seconds between refreshes
+				<input type="number" name="refreshInterval" id="refreshInterval" min="30" value="120">
+			</div>
+			<hr>
+			<center>
+				<h3>status</h3>
+				<div id="status" class="status inactive">
+					not checking this tab
+				</div>
+				<button id="toggleCheck" style="padding:0.5em">start</button>
+				<!-- <button id="apply">apply settings</button> -->
+
+				<button id="debug">view this tab's settings</button>
+
+				<div class="control-group">
+					<div id="timestamp" class="timestamp"></div>
+				</div>
+					<!-- <button id="apply">apply and start</button>
+					<button id="stop">stop</button> -->
+			</center>
+		</div>
+	</panel></popupset>
 	<script src="popup.js"></script>
 </body>
 </html>

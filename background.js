@@ -6,9 +6,9 @@ async function getTabSettings(tabId) {
 }
 
 async function setTabSettings(tabId, settings) {
-  await browser.storage.local.set({
-	[`ntusnipe_tabSettings_${tabId}`]: settings
-  });
+	await browser.storage.local.set({
+		[`ntusnipe_tabSettings_${tabId}`]: settings
+	});
 }
 
 async function clearTabSettings(tabId) {
@@ -88,7 +88,7 @@ async function monitorTab(tabId) {
 
 		// refresh and check
 		console.log(`searching tab ${tabId} for ${indices}`)
-		
+
 		// if not found, both null
 		const [index, slots] = (await searchTab(tabId, indices)) ?? [null, null]
 
@@ -144,12 +144,12 @@ function stopMonitoring(tabId) {
 browser.runtime.onMessage.addListener(async (message, sender) => {
   switch (message.action) {
 	case "startMonitoring":
-	  await setTabSettings(message.tabId, {
-		interval: message.interval,
-	  	indices: message.indices
-	  });
-	  monitorTab(message.tabId);
-	  break;
+		await setTabSettings(message.tabId, {
+			interval: message.interval,
+			indices: message.indices
+		});
+		monitorTab(message.tabId);
+		break;
 
 	case "stopMonitoring":
 	  stopMonitoring(message.tabId);

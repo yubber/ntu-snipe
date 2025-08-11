@@ -29,7 +29,10 @@ function updateUI(state) {
 		statusEl.className = 'status active';
 		toggleBtn.textContent = 'stop';
 		intervalInput.value = currentSettings.interval / 1000;
-		indicesInput.value = currentSettings.indices.join(" ");
+		console.log(currentSettings.indices)
+		if (currentSettings.indices){
+			indicesInput.value = currentSettings.indices.join(" ");
+		}
 	} else {
 		statusEl.textContent = 'not checking this tab';
 		statusEl.className = 'status inactive';
@@ -115,6 +118,11 @@ window.onload = async () => {
 	}
 
 	toggleBtn.addEventListener('click', toggleMonitoring);
+	document.getElementById("debug").addEventListener("click", () => {
+		browser.storage.local.get(`ntusnipe_tabSettings_${currentTabId}`).then(e => {
+			console.log(JSON.stringify(e))
+		})
+	})
 
 	updateUI(await getTabState(currentTabId));
 }
