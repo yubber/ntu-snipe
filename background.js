@@ -18,15 +18,21 @@ async function clearTabSettings(tabId) {
 async function searchTab(tabId, indices) {
 	// console.log(await browser.tabs.get(tabId))
 	try {
-		/*
-		1. refresh page by going back and forward (to avoid form resubmission errors and to prevent site from erroring because of missing POST data), waiting for page loads
-		2. setup message listener
-		3. send message ordering check, with indices
-		5. once promise is resolved return search results
-		*/
-		// background.js
+		// refresh page by going back and forward (to avoid form resubmission errors and to prevent site from erroring because of missing POST data), waiting for page loads
 		await browser.tabs.goBack(tabId) // the promise is fulfilled when page nav finishes
-		await browser.tabs.goForward(tabId)
+
+		// go forward until back at the index pg. because sometimes it no worky
+		let tab;
+		let triesLeft = 10;
+		while (triesLeft >= 0){
+			await browser.tabs.goForward(tabId)
+			tab = (await browser.tabs.get(tabId))
+			if (tab.url.includes("https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option")) {
+				break
+			}
+			await new Promise(resolve => setTimeout(resolve, 500)); // wait
+			triesLeft--;
+		}
 
 		let data = await browser.scripting.executeScript({
 			target: {tabId: tabId},
@@ -34,8 +40,6 @@ async function searchTab(tabId, indices) {
 				let scraped = {}
 
 				Array.from(document.querySelectorAll("select[name='new_index_nmbr']>option"))
-					// indices not defined
-					// .filter(e => indices.includes(`${e.value}`)) // list of elems
 					.filter(e =>  // matches regex "5digit / digit+ / digit+"
 						(/\d{5} \/ \d+ \/ \d+/gm).test(e.innerText)
 					)
@@ -43,25 +47,23 @@ async function searchTab(tabId, indices) {
 						scraped[e.value.toString()] = parseInt(e.innerText.split("/")[1].trim()) // index : slots
 					})
 
+				// console.log("grabbed data ", scraped)
+
 				return scraped;
 			},
 			world: 'MAIN' // not very good but NOTHING ELSE WORKS https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/scripting/ExecutionWorld
 		})
 
 		data = data[0].result
-
-		console.log(data)
+		// console.log("data: ",data)
+		// console.log("indices: ",indices)
 
 		for (const i of indices){
+			// console.log(i, data[i.toString()] > 0)
 			if (data[i.toString()] > 0){
-				new Notification('Course index found!',{
-					body: `${i} with ${data[i.toString()]} slots left`
-				});
-
-				return i
+				return [i, data[i]]
 			}
 		}
-		console.log("this iteration's search failed...")
 		return null
 
 	} catch (error) {
@@ -86,14 +88,30 @@ async function monitorTab(tabId) {
 
 		// refresh and check
 		console.log(`searching tab ${tabId} for ${indices}`)
-		const index = await searchTab(tabId, indices);
+		
+		// if not found, both null
+		const [index, slots] = (await searchTab(tabId, indices)) ?? [null, null]
 
 		browser.runtime.sendMessage({
 			action: "checkDone",
 			tabId: tabId,
-			// index: index,
+			index: index,
 			timestamp: Date.now()
 		}).catch(() => {});
+
+		await setTabSettings(tabId, {
+			timestamp: Date.now()
+		})
+
+		// if found
+		if (index != null){
+			// using the notif here instead, in case content script doesn't run
+			browser.notifications.create({
+				type: "basic",
+				title: 'Course index found!',
+				message: `${index} with ${slots} slots left`
+			});
+		}
 
 		// Wait for page load to start timer
 		const onCompleted = (updatedTabId, changeInfo) => {
@@ -151,9 +169,9 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
 
 // Tab lifecycle management
 browser.tabs.onRemoved.addListener((tabId) => {
-  stopMonitoring(tabId);
-  clearTabSettings(tabId);
-  browser.storage.local.remove(`lastValue_${tabId}`);
+	stopMonitoring(tabId);
+	clearTabSettings(tabId);
+	browser.storage.local.remove(`lastValue_${tabId}`);
 });
 
 // Restore monitoring on extension restart

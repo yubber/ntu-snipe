@@ -8,8 +8,6 @@ var intervalInput
 var timestampEl
 var indicesInput
 
-// console.log("popup.js loaded")
-
 let getTabState = async (tabId) => {
 	let x = await browser.runtime.sendMessage({
 		action: "getTabState",
@@ -37,10 +35,6 @@ function updateUI(state) {
 		statusEl.className = 'status inactive';
 		toggleBtn.textContent = 'start';
 	}
-
-	//   if (state?.index !== undefined) {
-	//     currentValueEl.textContent = state.lastValue || 'No value found';
-	//   }
 
 	if (state?.timestamp) {
 		timestampEl.textContent = `Last check: ${new Date(state.timestamp).toLocaleTimeString()}`;
@@ -104,12 +98,8 @@ browser.runtime.onMessage.addListener((message) => {
 	}
 });
 
-let onloadFn = async () => {
-	// document.getElementById("debug").onclick = alert("javascript is working properly.")
-
+window.onload = async () => {
 	const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-	//   console.log("loaded on " + tab.url)
-	//   document.body.innerHTML += tab.url
 	currentTabId = tab.id;
 
 	statusEl = document.getElementById('status');
@@ -118,42 +108,13 @@ let onloadFn = async () => {
 	timestampEl = document.getElementById('timestamp');
 	indicesInput = document.getElementById('wantedIndices');
 
-	if (true){
-	// if (tab.url === "https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"){
+	if (tab.url === "https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"){
 		document.body.style.backgroundColor = "white"
 		document.getElementById("controls").style.display = "block"
 		document.getElementById("hidden").style.display = "none"
 	}
 
-	// Get current monitoring state for this tab
-
-	updateUI(getTabState(currentTabId));
-
-	// Event listeners
 	toggleBtn.addEventListener('click', toggleMonitoring);
+
+	updateUI(await getTabState(currentTabId));
 }
-
-document.addEventListener("DOMContentLoaded", onloadFn)
-
-// document.getElementById('apply').addEventListener('click', async () => {
-	// 	const refreshInterval = parseInt(document.getElementById('refreshInterval').value) * 1000;
-// 	const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-
-// 	await browser.tabs.sendMessage(tab.id, {
-// 		command: "stop"
-// 	});
-
-// 	await browser.tabs.sendMessage(tab.id, {
-// 		command: "start",
-// 		indices: document.getElementById('wantedIndices').value.split(" "),
-// 		interval: refreshInterval
-// 	});
-// });
-
-// document.getElementById('stop').addEventListener('click', async () => {
-	// 	const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-
-// 	await browser.tabs.sendMessage(tab.id, {
-// 		command: "stop"
-// 	});
-// });
