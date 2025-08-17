@@ -19,7 +19,6 @@ let getTabState = async (tabId) => {
 	return x
 }
 
-// Update UI based on monitoring state
 function updateUI(state) {
 	isMonitoring = state?.isMonitoring || false;
 	currentSettings = state?.settings || null;
@@ -46,7 +45,6 @@ function updateUI(state) {
 	}
 }
 
-// Toggle monitoring state
 async function toggleMonitoring() {
 	if (isMonitoring) {
 		// Stop monitoring
@@ -118,11 +116,11 @@ window.onload = async () => {
 	}
 
 	toggleBtn.addEventListener('click', toggleMonitoring);
-	document.getElementById("debug").addEventListener("click", () => {
-		browser.storage.local.get(`ntusnipe_tabSettings_${currentTabId}`).then(e => {
-			console.log(JSON.stringify(e))
-		})
-	})
+	// document.getElementById("debug").addEventListener("click", () => {
+	// 	browser.storage.local.get(`ntusnipe_tabSettings_${currentTabId}`).then(e => {
+	// 		console.log(JSON.stringify(e))
+	// 	})
+	// })
 
 	updateUI(await getTabState(currentTabId));
 }

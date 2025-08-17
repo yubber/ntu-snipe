@@ -5,6 +5,7 @@ async function getTabSettings(tabId) {
 	return result[`ntusnipe_tabSettings_${tabId}`] || null;
 }
 
+// must always provide timestamp, interval and indices, because set just naively replaces the entire object
 async function setTabSettings(tabId, settings) {
 	await browser.storage.local.set({
 		[`ntusnipe_tabSettings_${tabId}`]: settings
@@ -34,6 +35,15 @@ async function searchTab(tabId, indices) {
 			triesLeft--;
 		}
 
+		if (triesLeft < 0){
+			console.log("couldn't refresh")
+			browser.notifications.create({
+				type: "basic",
+				title: 'NTU Snipe error',
+				message: `Failed to refresh page`
+			});
+		}
+
 		let data = await browser.scripting.executeScript({
 			target: {tabId: tabId},
 			func: ()=>{
@@ -47,7 +57,8 @@ async function searchTab(tabId, indices) {
 						scraped[e.value.toString()] = parseInt(e.innerText.split("/")[1].trim()) // index : slots
 					})
 
-				// console.log("grabbed data ", scraped)
+				// apparently mutating the dom this way gets preserved when you refresh by navigation
+				// document.getElementsByTagName("h1")[0].innerText += `| last refresh: ${new Date().toLocaleTimeString()}`
 
 				return scraped;
 			},
@@ -100,7 +111,9 @@ async function monitorTab(tabId) {
 		}).catch(() => {});
 
 		await setTabSettings(tabId, {
-			timestamp: Date.now()
+			timestamp: Date.now(),
+			indices: indices,
+			interval: interval
 		})
 
 		// if found
@@ -146,7 +159,8 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
 	case "startMonitoring":
 		await setTabSettings(message.tabId, {
 			interval: message.interval,
-			indices: message.indices
+			indices: message.indices,
+			timestamp: Date.now()
 		});
 		monitorTab(message.tabId);
 		break;

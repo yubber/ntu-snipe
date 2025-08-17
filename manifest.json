@@ -1,7 +1,7 @@
 {
 	"name": "ntu-snipe",
 	"version": "0.0.1",
-	"description": "snipe course indices",
+	"description": "auto refreshes stars page to snipe course indices",
 	"manifest_version": 3,
 	"host_permissions": [
 		"https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"
@@ -10,10 +10,14 @@
 		"tabs",
 		"storage",
 		"scripting",
-		"notifications"
+		"notifications",
+		"alarms"
 	],
 	"action": {
 		"default_popup": "popup.html"
+	},
+	"icons": {
+		"128": "src/snipe128.png"
 	},
 	"background": {
 		"scripts": ["background.js"],
