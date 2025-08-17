@@ -11,7 +11,8 @@
 		"storage",
 		"scripting",
 		"notifications",
-		"alarms"
+		"alarms",
+		"browsingData"
 	],
 	"action": {
 		"default_popup": "popup.html"

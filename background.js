@@ -14,6 +14,7 @@ async function clearTabSettings(tabId) {
 	await browser.storage.local.remove(`ntusnipe_tabSettings_${tabId}`);
 }
 
+// scrape, check and refresh logic
 async function searchTab(tabId, indices) {
 	// console.log(await browser.tabs.get(tabId))
 	try {
@@ -22,23 +23,37 @@ async function searchTab(tabId, indices) {
 		await browser.tabs.goBack(tabId) // the promise is fulfilled when page nav finishes
 
 		// clear cache to force refetching indices
-		await browser.browsingData.removeCache({origins: ['https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option']});
+		// console.log(browser.browsingData.removeCache)
+
+		// in chrome it's origins, in firefox it's hostnames
+		await browser.browsingData.removeCache({
+			// origins: ['https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option']
+			hostnames: [new URL("https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option").hostname] // this probably also clears cache for other pages :(
+		}).then(
+			()=>{},(err)=>{console.error(err)}
+		);
+
+		// maybe try this https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/update
 
 		// go forward until back at the index pg. because sometimes it no worky
+		for (let i = 0; i < 7; i++){
+			await browser.tabs.goForward(tabId)
+			await new Promise(resolve => setTimeout(resolve, 500)); // wait
+		}
 		let tab;
 		let triesLeft = 10;
 		while (triesLeft >= 0){
 			await browser.tabs.goForward(tabId)
+			await new Promise(resolve => setTimeout(resolve, 500)); // wait
 			tab = (await browser.tabs.get(tabId))
 			if (tab.url.includes("https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option")) {
 				break
 			}
-			await new Promise(resolve => setTimeout(resolve, 500)); // wait
 			triesLeft--;
 		}
 
 		if (triesLeft < 0){
-			console.log("couldn't refresh")
+			console.error("couldn't refresh")
 			browser.notifications.create({
 				type: "basic",
 				title: 'NTU Snipe error',
@@ -86,8 +101,8 @@ async function searchTab(tabId, indices) {
 	}
 }
 
-// perform 1 check
-const checkAndRefresh = async (tabId) => {
+// perform 1 check, handles messages to update state etc.
+const checkAndReport = async (tabId) => {
 	try {
 		const settings = await getTabSettings(tabId);
 		const { interval, indices } = settings;
@@ -135,18 +150,18 @@ const monitorTab = async (tabId) => {
 	browser.alarms.create(
 		`ntusnipe_${tabId}`,
 		{
-			delayInMinutes: 1,
+			delayInMinutes: 0.1,
 			periodInMinutes: interval / 60
 		}
 	)
 }
 
 browser.alarms.onAlarm.addListener((alarm) => {
-	console.log(`received alarm ${alarm.name}`)
+	// console.log(`received alarm ${alarm.name}`)
 	let [extension, tabId] = alarm.name.split("_")
 	if (extension === "ntusnipe"){
 		tabId = parseInt(tabId)
-		checkAndRefresh(tabId)
+		checkAndReport(tabId)
 	}
 });
 

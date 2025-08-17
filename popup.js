@@ -106,7 +106,8 @@ window.onload = async () => {
 	timestampEl = document.getElementById('timestamp');
 	indicesInput = document.getElementById('wantedIndices');
 
-	if (tab.url === "https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"){
+	if (true){
+	// if (tab.url === "https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"){
 		// i enjoyed this album far earlier and in a much gayer, deeper and emotionally unstable way than you do
 		document.body.style.backgroundColor = "rgb(138,206,0)"
 		document.getElementById("controls").style.display = "block"
