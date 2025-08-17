@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>ntu snipe settings</title>
+</head>
+<body>
+	<p>
+		you can specify a webhook URL here. <br>
+		this can be used to do stuff like send a discord message when an index is found. <br>
+		<a href="https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks">guide to creating a discord webhook</a>
+		<br>
+		technical details: POST request with {content:"found course..."}
+	</p>
+	<form>
+      <label>Webhook URL <input type="text" id="webhook" name="color" /></label>
+      <button type="submit">Save</button>
+    </form>
+
+    <script src="settings.js"></script>
+</body>
+</html>

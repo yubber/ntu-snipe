@@ -114,14 +114,15 @@ window.onload = async () => {
 	}
 
 	toggleBtn.addEventListener('click', toggleMonitoring);
-	document.getElementById("debug").addEventListener("click", () => {
-		browser.storage.local.get(`ntusnipe_tabSettings_${currentTabId}`).then(e => {
-			console.log(JSON.stringify(e))
-		})
-		browser.alarms.getAll().then(e => {
-			console.log(JSON.stringify(e))
-		})
-	})
 
 	updateUI(await getTabState(currentTabId));
+
+	// document.getElementById("debug").addEventListener("click", () => {
+	// 	browser.storage.local.get(`ntusnipe_tabSettings_${currentTabId}`).then(e => {
+	// 		console.log(JSON.stringify(e))
+	// 	})
+	// 	browser.alarms.getAll().then(e => {
+	// 		console.log(JSON.stringify(e))
+	// 	})
+	// })
 }

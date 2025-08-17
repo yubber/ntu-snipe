@@ -21,6 +21,9 @@ async function searchTab(tabId, indices) {
 		// refresh page by going back and forward (to avoid form resubmission errors and to prevent site from erroring because of missing POST data), waiting for page loads
 		await browser.tabs.goBack(tabId) // the promise is fulfilled when page nav finishes
 
+		// clear cache to force refetching indices
+		await browser.browsingData.removeCache({origins: ['https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option']});
+
 		// go forward until back at the index pg. because sometimes it no worky
 		let tab;
 		let triesLeft = 10;
@@ -57,7 +60,8 @@ async function searchTab(tabId, indices) {
 				})
 
 				// apparently mutating the dom this way gets preserved when you refresh by navigation
-				// document.getElementsByTagName("h1")[0].innerText += `| last refresh: ${new Date().toLocaleTimeString()}`
+				// prepend refresh log to last p elem
+				document.querySelector('p:last-of-type').insertAdjacentHTML('afterbegin', `refreshed at: ${new Date().toLocaleTimeString()}<br>`)
 
 				return scraped;
 			},
