@@ -1,5 +1,3 @@
-const activeMonitors = {};
-
 async function getTabSettings(tabId) {
 	const result = await browser.storage.local.get(`ntusnipe_tabSettings_${tabId}`);
 	return result[`ntusnipe_tabSettings_${tabId}`] || null;
@@ -13,12 +11,13 @@ async function setTabSettings(tabId, settings) {
 }
 
 async function clearTabSettings(tabId) {
-  await browser.storage.local.remove(`ntusnipe_tabSettings_${tabId}`);
+	await browser.storage.local.remove(`ntusnipe_tabSettings_${tabId}`);
 }
 
 async function searchTab(tabId, indices) {
 	// console.log(await browser.tabs.get(tabId))
 	try {
+		console.log(tabId)
 		// refresh page by going back and forward (to avoid form resubmission errors and to prevent site from erroring because of missing POST data), waiting for page loads
 		await browser.tabs.goBack(tabId) // the promise is fulfilled when page nav finishes
 
@@ -50,12 +49,12 @@ async function searchTab(tabId, indices) {
 				let scraped = {}
 
 				Array.from(document.querySelectorAll("select[name='new_index_nmbr']>option"))
-					.filter(e =>  // matches regex "5digit / digit+ / digit+"
-						(/\d{5} \/ \d+ \/ \d+/gm).test(e.innerText)
-					)
-					.forEach(e => {
-						scraped[e.value.toString()] = parseInt(e.innerText.split("/")[1].trim()) // index : slots
-					})
+				.filter(e =>  // matches regex "5digit / digit+ / digit+"
+					(/\d{5} \/ \d+ \/ \d+/gm).test(e.innerText)
+				)
+				.forEach(e => {
+					scraped[e.value.toString()] = parseInt(e.innerText.split("/")[1].trim()) // index : slots
+				})
 
 				// apparently mutating the dom this way gets preserved when you refresh by navigation
 				// document.getElementsByTagName("h1")[0].innerText += `| last refresh: ${new Date().toLocaleTimeString()}`
@@ -83,24 +82,12 @@ async function searchTab(tabId, indices) {
 	}
 }
 
-// Monitoring logic
-async function monitorTab(tabId) {
-  if (activeMonitors[tabId]) return;
-
-  const settings = await getTabSettings(tabId);
-  if (!settings) return;
-
-  const { interval, indices } = settings;
-
-  const checkAndRefresh = async () => {
+// perform 1 check
+const checkAndRefresh = async (tabId) => {
 	try {
-		// Verify tab still exists
-		const tab = await browser.tabs.get(tabId);
+		const settings = await getTabSettings(tabId);
+		const { interval, indices } = settings;
 
-		// refresh and check
-		console.log(`searching tab ${tabId} for ${indices}`)
-
-		// if not found, both null
 		const [index, slots] = (await searchTab(tabId, indices)) ?? [null, null]
 
 		browser.runtime.sendMessage({
@@ -125,81 +112,87 @@ async function monitorTab(tabId) {
 				message: `${index} with ${slots} slots left`
 			});
 		}
-
-		// Wait for page load to start timer
-		const onCompleted = (updatedTabId, changeInfo) => {
-			if (updatedTabId === tabId && changeInfo.status === 'complete') {
-				browser.tabs.onUpdated.removeListener(onCompleted);
-				activeMonitors[tabId] = setTimeout(() => checkAndRefresh(), interval);
-			}
-		};
-
-		browser.tabs.onUpdated.addListener(onCompleted);
-
 	} catch (error) {
-		console.error(`Monitoring failed for tab ${tabId}:`, error);
+		console.error(`check failed for tab ${tabId}:`, error);
 		stopMonitoring(tabId);
 	}
-  };
-
-  // Start the monitoring cycle
-  checkAndRefresh();
 }
 
+// set up constant check on a tab
+const monitorTab = async (tabId) => {
+	const settings = await getTabSettings(tabId);
+	if (!settings) {
+		console.error(`monitor failed: could not get settings for tab ${tabId}`)
+		return;
+	}
+
+	const { interval, indices } = settings;
+
+	browser.alarms.create(
+		`ntusnipe_${tabId}`,
+		{
+			delayInMinutes: 1,
+			periodInMinutes: interval / 60
+		}
+	)
+}
+
+browser.alarms.onAlarm.addListener((alarm) => {
+	console.log(`received alarm ${alarm.name}`)
+	let [extension, tabId] = alarm.name.split("_")
+	if (extension === "ntusnipe"){
+		tabId = parseInt(tabId)
+		checkAndRefresh(tabId)
+	}
+});
+
+// deletes alarm and clears monitors var
 function stopMonitoring(tabId) {
-  if (activeMonitors[tabId]) {
-	clearTimeout(activeMonitors[tabId]);
-	delete activeMonitors[tabId];
-  }
+	if (!browser.alarms.clear(`ntusnipe_${tabId}`)){
+		console.error(`couldn't delete alarm ${tabId}`)
+	}
 }
 
-// Message handling
 browser.runtime.onMessage.addListener(async (message, sender) => {
-  switch (message.action) {
-	case "startMonitoring":
-		await setTabSettings(message.tabId, {
-			interval: message.interval,
-			indices: message.indices,
-			timestamp: Date.now()
-		});
-		monitorTab(message.tabId);
-		break;
-
-	case "stopMonitoring":
-	  stopMonitoring(message.tabId);
-	  await clearTabSettings(message.tabId);
-	  break;
-
-	case "getTabState":
-		const settings = await getTabSettings(message.tabId);
-		return Promise.resolve({
-			isMonitoring: !!activeMonitors[message.tabId],
-			settings: settings,
-			lastValue: (await browser.storage.local.get(`lastValue_${message.tabId}`))[`lastValue_${message.tabId}`]
-		});
-		break
-  }
+	switch (message.action) {
+		case "startMonitoring":
+			await setTabSettings(message.tabId, {
+				interval: message.interval,
+				indices: message.indices,
+				timestamp: Date.now()
+			});
+			monitorTab(message.tabId);
+			break;
+		case "stopMonitoring":
+			stopMonitoring(message.tabId);
+			await clearTabSettings(message.tabId);
+			break;
+		case "getTabState":
+			return Promise.resolve({
+				isMonitoring: (await browser.alarms.get(`ntusnipe_${message.tabId}`)) !== undefined,
+				settings: await getTabSettings(message.tabId)
+			});
+	}
 });
 
 // Tab lifecycle management
 browser.tabs.onRemoved.addListener((tabId) => {
 	stopMonitoring(tabId);
 	clearTabSettings(tabId);
-	browser.storage.local.remove(`lastValue_${tabId}`);
 });
 
 // Restore monitoring on extension restart
 browser.runtime.onStartup.addListener(async () => {
-  const allItems = await browser.storage.local.get();
-  Object.keys(allItems)
-	.filter(key => key.startsWith('ntusnipe_tabSettings_'))
-	.forEach(async (key) => {
-	  const tabId = parseInt(key.split('_').at(-1));
-	  try {
-		await browser.tabs.get(tabId); // Verify tab exists
-		monitorTab(tabId);
-	  } catch {
-		await clearTabSettings(tabId);
-	  }
-	});
+	const allItems = await browser.storage.local.get();
+	Object.keys(allItems)
+		.filter(key => key.startsWith('ntusnipe_tabSettings_'))
+		.forEach(async (key) => {
+			const tabId = parseInt(key.split('_').at(-1));
+			try {
+				await browser.tabs.get(tabId); // Verify tab exists
+				monitorTab(tabId);
+			} catch {
+				await clearTabSettings(tabId);
+			}
+		});
 });

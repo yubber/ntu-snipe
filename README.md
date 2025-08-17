@@ -2,6 +2,8 @@
 
 this is a **firefox** browser extension that helps you auto refresh STARS course index pages, and alerts you if it finds an index you want.
 
+![NTU Snipe icon](src/snipe128.png)
+
 # how to use
 
 1. navigate to the index change page (https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option) on STARS

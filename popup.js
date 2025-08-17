@@ -9,14 +9,14 @@ var timestampEl
 var indicesInput
 
 let getTabState = async (tabId) => {
-	let x = await browser.runtime.sendMessage({
+	// console.log(`fetched tab ${tabId}'s state:`)
+	return(await browser.runtime.sendMessage({
 		action: "getTabState",
 		tabId: tabId
-	});
-	// console.log(`fetched tab ${tabId}'s state:`)
+	}))
 	// console.log(x)
 	// console.log(x.settings)
-	return x
+	// return x
 }
 
 function updateUI(state) {
@@ -24,10 +24,10 @@ function updateUI(state) {
 	currentSettings = state?.settings || null;
 
 	if (isMonitoring && currentSettings) {
-		statusEl.textContent = `checking every ${currentSettings.interval/1000}s`;
+		statusEl.textContent = `checking every ${currentSettings.interval}s`;
 		statusEl.className = 'status active';
 		toggleBtn.textContent = 'stop';
-		intervalInput.value = currentSettings.interval / 1000;
+		intervalInput.value = currentSettings.interval;
 		console.log(currentSettings.indices)
 		if (currentSettings.indices){
 			indicesInput.value = currentSettings.indices.join(" ");
@@ -55,7 +55,7 @@ async function toggleMonitoring() {
 		updateUI({ isMonitoring: false });
 	} else {
 		// Start monitoring
-		const interval = parseInt(intervalInput.value) * 1000;
+		const interval = parseInt(intervalInput.value);
 		const indices = indicesInput.value.trim().split(" ");
 
 		if (!indices) {
@@ -63,15 +63,10 @@ async function toggleMonitoring() {
 			return;
 		}
 
-		if (isNaN(interval) || interval < 30000) {
+		if (isNaN(interval) || interval < 30) {
 			alert('enter interval of at least 30s');
 			return;
 		}
-
-		// update the tab env's indices
-		// await browser.scripting.executeScript({
-		// 	code: `indices = ${indices}`,
-		// });
 
 		await browser.runtime.sendMessage({
 			action: "startMonitoring",
@@ -103,6 +98,8 @@ window.onload = async () => {
 	const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
 	currentTabId = tab.id;
 
+	console.log("popup ", currentTabId)
+
 	statusEl = document.getElementById('status');
 	toggleBtn = document.getElementById('toggleCheck');
 	intervalInput = document.getElementById('refreshInterval');
@@ -110,17 +107,21 @@ window.onload = async () => {
 	indicesInput = document.getElementById('wantedIndices');
 
 	if (tab.url === "https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option"){
-		document.body.style.backgroundColor = "white"
+		// i enjoyed this album far earlier and in a much gayer, deeper and emotionally unstable way than you do
+		document.body.style.backgroundColor = "rgb(138,206,0)"
 		document.getElementById("controls").style.display = "block"
 		document.getElementById("hidden").style.display = "none"
 	}
 
 	toggleBtn.addEventListener('click', toggleMonitoring);
-	// document.getElementById("debug").addEventListener("click", () => {
-	// 	browser.storage.local.get(`ntusnipe_tabSettings_${currentTabId}`).then(e => {
-	// 		console.log(JSON.stringify(e))
-	// 	})
-	// })
+	document.getElementById("debug").addEventListener("click", () => {
+		browser.storage.local.get(`ntusnipe_tabSettings_${currentTabId}`).then(e => {
+			console.log(JSON.stringify(e))
+		})
+		browser.alarms.getAll().then(e => {
+			console.log(JSON.stringify(e))
+		})
+	})
 
 	updateUI(await getTabState(currentTabId));
 }
