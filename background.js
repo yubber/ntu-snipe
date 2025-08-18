@@ -23,8 +23,6 @@ async function searchTab(tabId, indices) {
 		await browser.tabs.goBack(tabId) // the promise is fulfilled when page nav finishes
 
 		// clear cache to force refetching indices
-		// console.log(browser.browsingData.removeCache)
-
 		// in chrome it's origins, in firefox it's hostnames
 		await browser.browsingData.removeCache({
 			// origins: ['https://wish.wis.ntu.edu.sg/pls/webexe/AUS_STARS_MENU.menu_option']

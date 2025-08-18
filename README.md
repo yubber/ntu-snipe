@@ -8,7 +8,15 @@ this is a **firefox** browser extension that helps you auto refresh STARS course
 
 # installation
 
-if the extension isn't available on firefox addons, 
+if the extension isn't available on firefox addons, you have to load it as a temporary addon.
+
+1. download all the code, as a `.zip` or individual files.
+
+2. go to (about:debugging#/runtime/this-firefox)[about:debugging#/runtime/this-firefox]
+
+3. click "load temporary add-on" and open the `.zip`. if it's not zipped, open the `manifest.json`.
+
+4. the extension icon should be in the menu now. if you don't see it, right click the toolbar and click customize toolbar. then drag "extensions" onto it, and the icon will be in that menu.
 
 # how to use
 
